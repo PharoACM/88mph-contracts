@@ -1,3 +1,4 @@
+usePlugin('@nomiclabs/buidler-ganache')
 usePlugin('@nomiclabs/buidler-truffle5')
 usePlugin('solidity-coverage')
 
@@ -36,6 +37,12 @@ module.exports = {
       blockGasLimit: 9950000,
       gas: 'auto',
       gasPrice: 'auto'
+    },
+    ganache: {
+      url: 'http://localhost:8545',
+      fork: 'https://mainnet.infura.io/v3/2f4ac5ce683c4da09f88b2b564d44199',
+      unlockedAccounts: ['0x9eb7f2591ed42dee9315b6e2aaf21ba85ea69f8c'],
+      gasLimit: 1e7
     }
   }
 }
