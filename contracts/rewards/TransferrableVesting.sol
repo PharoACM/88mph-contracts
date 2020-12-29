@@ -1,4 +1,5 @@
 pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -107,6 +108,10 @@ contract TransferrableVesting is ERC721Metadata, Ownable {
 
         // deduct already withdrawn amount and return
         return vestedAmount.sub(vest.withdrawnAmount);
+    }
+
+    function getVest(uint256 vestIdx) external view returns (Vest memory) {
+        return vestList[vestIdx];
     }
 
     // NFT metadata

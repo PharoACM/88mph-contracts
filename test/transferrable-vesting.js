@@ -26,7 +26,7 @@ function num2str (num) {
   return BigNumber(num).integerValue().toFixed()
 }
 
-contract('Vesting', accounts => {
+contract('TransferrableVesting', accounts => {
   // Accounts
   const acc0 = accounts[0]
   const acc1 = accounts[1]
