@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "../../libs/DecMath.sol";
 import "./IMPHIssuanceModel.sol";
 
-contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
+contract MPHIssuanceModel02 is Ownable, IMPHIssuanceModel {
     using Address for address;
     using DecMath for uint256;
     using SafeMath for uint256;
@@ -34,10 +34,6 @@ contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
      */
     mapping(address => uint256) public poolFunderRewardMultiplier;
     /**
-        @notice The period over which the depositor reward will be vested, in seconds.
-     */
-    mapping(address => uint256) public poolDepositorRewardVestPeriod;
-    /**
         @notice The period over which the funder reward will be vested, in seconds.
      */
     mapping(address => uint256) public poolFunderRewardVestPeriod;
@@ -47,11 +43,6 @@ contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
      */
     uint256 public devRewardMultiplier;
 
-    event ESetParamAddress(
-        address indexed sender,
-        string indexed paramName,
-        address newValue
-    );
     event ESetParamUint(
         address indexed sender,
         string indexed paramName,
@@ -87,9 +78,10 @@ contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
             uint256 govReward
         )
     {
-        uint256 mintAmount = depositAmount.mul(depositPeriodInSeconds).decmul(
-            poolDepositorRewardMintMultiplier[pool]
-        );
+        uint256 mintAmount =
+            depositAmount.mul(depositPeriodInSeconds).decmul(
+                poolDepositorRewardMintMultiplier[pool]
+            );
         depositorReward = mintAmount;
         devReward = mintAmount.decmul(devRewardMultiplier);
         govReward = 0;
@@ -166,6 +158,15 @@ contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
         govReward = 0;
     }
 
+    function getDepositorRewardVestPeriod(
+        address pool,
+        uint256 depositAmount,
+        uint256 depositPeriodInSeconds,
+        uint256 interestAmount
+    ) external view returns (uint256 vestPeriodInSeconds) {
+        return depositPeriodInSeconds;
+    }
+
     /**
         Param setters
      */
@@ -213,20 +214,6 @@ contract MPHIssuanceModel01 is Ownable, IMPHIssuanceModel {
             "poolFunderRewardMultiplier",
             pool,
             newMultiplier
-        );
-    }
-
-    function setPoolDepositorRewardVestPeriod(
-        address pool,
-        uint256 newVestPeriodInSeconds
-    ) external onlyOwner {
-        require(pool.isContract(), "MPHIssuanceModel: pool not contract");
-        poolDepositorRewardVestPeriod[pool] = newVestPeriodInSeconds;
-        emit ESetParamUint(
-            msg.sender,
-            "poolDepositorRewardVestPeriod",
-            pool,
-            newVestPeriodInSeconds
         );
     }
 

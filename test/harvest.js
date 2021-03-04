@@ -12,7 +12,7 @@ const MPHMinter = artifacts.require('MPHMinter')
 const ERC20Mock = artifacts.require('ERC20Mock')
 const Rewards = artifacts.require('Rewards')
 const EMAOracle = artifacts.require('EMAOracle')
-const MPHIssuanceModel = artifacts.require('MPHIssuanceModel01')
+const MPHIssuanceModel = artifacts.require('MPHIssuanceModel02')
 const Vesting = artifacts.require('Vesting')
 
 const VaultMock = artifacts.require('VaultMock')
@@ -145,6 +145,10 @@ contract('Harvest', accounts => {
     // Initialize MPH
     mph = await MPHToken.new()
     await mph.init()
+    const mphMintAmount = 1000 * PRECISION
+    await mph.ownerMint(acc0, num2str(mphMintAmount))
+    await mph.ownerMint(acc1, num2str(mphMintAmount))
+    await mph.ownerMint(acc2, num2str(mphMintAmount))
     vesting = await Vesting.new(mph.address)
     mphIssuanceModel = await MPHIssuanceModel.new(DevRewardMultiplier)
     mphMinter = await MPHMinter.new(mph.address, govTreasury, devWallet, mphIssuanceModel.address, vesting.address)
@@ -198,7 +202,6 @@ contract('Harvest', accounts => {
     await mphIssuanceModel.setPoolDepositorRewardMintMultiplier(dInterestPool.address, PoolDepositorRewardMintMultiplier)
     await mphIssuanceModel.setPoolDepositorRewardTakeBackMultiplier(dInterestPool.address, PoolDepositorRewardTakeBackMultiplier)
     await mphIssuanceModel.setPoolFunderRewardMultiplier(dInterestPool.address, PoolFunderRewardMultiplier)
-    await mphIssuanceModel.setPoolDepositorRewardVestPeriod(dInterestPool.address, PoolDepositorRewardVestPeriod)
     await mphIssuanceModel.setPoolFunderRewardVestPeriod(dInterestPool.address, PoolFunderRewardVestPeriod)
 
     // Transfer the ownership of the money market to the DInterest pool
@@ -530,7 +533,7 @@ contract('Harvest', accounts => {
       await dInterestPool.deposit(num2str(depositAmount), num2str(blockNow + YEAR_IN_SEC), { from: acc0 })
 
       // wait for vest to finish
-      await timePass(1 / 52) // 1 week
+      await timePass(1) // 1 year
       await vesting.withdrawVested(acc0, 0, { from: acc0 })
 
       const expectedMPHReward = BigNumber(depositAmount).times(YEAR_IN_SEC).times(PoolDepositorRewardMintMultiplier).div(PRECISION)

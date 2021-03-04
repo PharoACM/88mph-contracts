@@ -86,25 +86,27 @@ contract MPHMinter is Ownable {
             emit MintDepositorReward(msg.sender, to, 0);
             return 0;
         }
-    
-        (
-            uint256 depositorReward,
-            uint256 devReward,
-            uint256 govReward
-        ) = issuanceModel.computeDepositorReward(
-            msg.sender,
-            depositAmount,
-            depositPeriodInSeconds,
-            interestAmount
-        );
+
+        (uint256 depositorReward, uint256 devReward, uint256 govReward) =
+            issuanceModel.computeDepositorReward(
+                msg.sender,
+                depositAmount,
+                depositPeriodInSeconds,
+                interestAmount
+            );
         if (depositorReward == 0 && devReward == 0 && govReward == 0) {
             return 0;
         }
 
         // mint and vest depositor reward
         mph.ownerMint(address(this), depositorReward);
-        uint256 vestPeriodInSeconds = issuanceModel
-            .poolDepositorRewardVestPeriod(msg.sender);
+        uint256 vestPeriodInSeconds =
+            issuanceModel.getDepositorRewardVestPeriod(
+                msg.sender,
+                depositAmount,
+                depositPeriodInSeconds,
+                interestAmount
+            );
         if (vestPeriodInSeconds == 0) {
             // no vesting, transfer to `to`
             mph.transfer(to, depositorReward);
@@ -135,15 +137,12 @@ contract MPHMinter is Ownable {
         uint256 mintMPHAmount,
         bool early
     ) external onlyWhitelistedPool returns (uint256) {
-        (
-            uint256 takeBackAmount,
-            uint256 devReward,
-            uint256 govReward
-        ) = issuanceModel.computeTakeBackDepositorRewardAmount(
-            msg.sender,
-            mintMPHAmount,
-            early
-        );
+        (uint256 takeBackAmount, uint256 devReward, uint256 govReward) =
+            issuanceModel.computeTakeBackDepositorRewardAmount(
+                msg.sender,
+                mintMPHAmount,
+                early
+            );
         if (takeBackAmount == 0 && devReward == 0 && govReward == 0) {
             return 0;
         }
@@ -186,27 +185,23 @@ contract MPHMinter is Ownable {
             return 0;
         }
 
-        (
-            uint256 funderReward,
-            uint256 devReward,
-            uint256 govReward
-        ) = issuanceModel.computeFunderReward(
-            msg.sender,
-            depositAmount,
-            fundingCreationTimestamp,
-            maturationTimestamp,
-            interestPayoutAmount,
-            early
-        );
+        (uint256 funderReward, uint256 devReward, uint256 govReward) =
+            issuanceModel.computeFunderReward(
+                msg.sender,
+                depositAmount,
+                fundingCreationTimestamp,
+                maturationTimestamp,
+                interestPayoutAmount,
+                early
+            );
         if (funderReward == 0 && devReward == 0 && govReward == 0) {
             return 0;
         }
 
         // mint and vest funder reward
         mph.ownerMint(address(this), funderReward);
-        uint256 vestPeriodInSeconds = issuanceModel.poolFunderRewardVestPeriod(
-            msg.sender
-        );
+        uint256 vestPeriodInSeconds =
+            issuanceModel.poolFunderRewardVestPeriod(msg.sender);
         if (vestPeriodInSeconds == 0) {
             // no vesting, transfer to `to`
             mph.transfer(to, funderReward);

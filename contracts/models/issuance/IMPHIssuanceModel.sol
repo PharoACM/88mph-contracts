@@ -80,10 +80,12 @@ interface IMPHIssuanceModel {
     /**
         @notice The period over which the depositor reward will be vested, in seconds.
      */
-    function poolDepositorRewardVestPeriod(address pool)
-        external
-        view
-        returns (uint256 vestPeriodInSeconds);
+    function getDepositorRewardVestPeriod(
+        address pool,
+        uint256 depositAmount,
+        uint256 depositPeriodInSeconds,
+        uint256 interestAmount
+    ) external view returns (uint256 vestPeriodInSeconds);
 
     /**
         @notice The period over which the funder reward will be vested, in seconds.

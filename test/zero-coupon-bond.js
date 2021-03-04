@@ -12,7 +12,7 @@ const MPHMinter = artifacts.require('MPHMinter')
 const ERC20Mock = artifacts.require('ERC20Mock')
 const Rewards = artifacts.require('Rewards')
 const EMAOracle = artifacts.require('EMAOracle')
-const MPHIssuanceModel = artifacts.require('MPHIssuanceModel01')
+const MPHIssuanceModel = artifacts.require('MPHIssuanceModel02')
 const Vesting = artifacts.require('Vesting')
 
 const VaultMock = artifacts.require('VaultMock')
@@ -140,6 +140,10 @@ contract('ZeroCouponBond', accounts => {
     // Initialize MPH
     mph = await MPHToken.new()
     await mph.init()
+    const mphMintAmount = 1000 * PRECISION
+    await mph.ownerMint(acc0, num2str(mphMintAmount))
+    await mph.ownerMint(acc1, num2str(mphMintAmount))
+    await mph.ownerMint(acc2, num2str(mphMintAmount))
     vesting = await Vesting.new(mph.address)
     mphIssuanceModel = await MPHIssuanceModel.new(DevRewardMultiplier)
     mphMinter = await MPHMinter.new(mph.address, govTreasury, devWallet, mphIssuanceModel.address, vesting.address)
@@ -193,7 +197,6 @@ contract('ZeroCouponBond', accounts => {
     await mphIssuanceModel.setPoolDepositorRewardMintMultiplier(dInterestPool.address, PoolDepositorRewardMintMultiplier)
     await mphIssuanceModel.setPoolDepositorRewardTakeBackMultiplier(dInterestPool.address, PoolDepositorRewardTakeBackMultiplier)
     await mphIssuanceModel.setPoolFunderRewardMultiplier(dInterestPool.address, PoolFunderRewardMultiplier)
-    await mphIssuanceModel.setPoolDepositorRewardVestPeriod(dInterestPool.address, PoolDepositorRewardVestPeriod)
     await mphIssuanceModel.setPoolFunderRewardVestPeriod(dInterestPool.address, PoolFunderRewardVestPeriod)
 
     // Transfer the ownership of the money market to the DInterest pool
@@ -212,10 +215,6 @@ contract('ZeroCouponBond', accounts => {
     await stablecoin.approve(dInterestPool.address, num2str(depositAmount), { from: acc0 })
     const blockNow = await latestBlockTimestamp()
     await dInterestPool.deposit(num2str(depositAmount), num2str(blockNow + YEAR_IN_SEC), { from: acc0 })
-
-    // withdraw vested MPH reward after 7 days
-    await timePass(1 / 52)
-    await vesting.withdrawVested(acc0, 0, { from: acc0 })
 
     // Deploy ZeroCouponBondFactory
     const zeroCouponBondTemplate = await ZeroCouponBond.new()
@@ -253,6 +252,7 @@ contract('ZeroCouponBond', accounts => {
     const fractionalDepositAddress = mintReceipt.logs[mintReceipt.logs.length - 1].args.fractionalDepositAddress
     const fractionalDeposit = await FractionalDeposit.at(fractionalDepositAddress)
     const fractionalDepositBalance = await fractionalDeposit.balanceOf(zcbAddress)
+    const beforeMPHBalance = await mph.balanceOf(acc0)
 
     // wait 2 years
     await timePass(2)
@@ -269,7 +269,7 @@ contract('ZeroCouponBond', accounts => {
     const afterStablecoinBalance = await stablecoin.balanceOf(acc0)
 
     // check balances
-    const actualMPHReward = await mph.balanceOf(acc0)
+    const actualMPHReward = BigNumber(await mph.balanceOf(acc0)).minus(beforeMPHBalance)
     const expectedMPHReward = BigNumber(PoolDepositorRewardMintMultiplier).times(depositAmount).div(PRECISION).times(YEAR_IN_SEC).times(BigNumber(PRECISION).minus(PoolDepositorRewardTakeBackMultiplier)).div(PRECISION)
     assert(epsilonEq(actualMPHReward, expectedMPHReward), 'MPH reward amount incorrect')
     assert(epsilonEq(afterStablecoinBalance.sub(beforeStablecoinBalance), fractionalDepositBalance), 'stablecoins not credited to acc0')
